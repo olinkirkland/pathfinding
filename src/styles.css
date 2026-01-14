@@ -15,3 +15,7 @@ body {
     overscroll-behavior-y: none;
     overscroll-behavior-x: none;
 }
+
+body {
+    line-height: 0;
+}

@@ -1,9 +1,15 @@
 import { Diagram, Site, Voronoi } from 'voronoijs';
 import { distance, type Point } from './math-util';
 
+export type WorldSite = Site & {
+    attributes?: {
+        elevation: number;
+    };
+};
+
 // Poisson Disk Sampling
 export class NavigationGraph {
-    private sites: Site[];
+    private sites: WorldSite[];
     private diagram: Diagram;
 
     constructor(bounds: { width: number; height: number }) {
@@ -11,7 +17,7 @@ export class NavigationGraph {
 
         const points: Point[] = samplePoints(
             { width: bounds.width, height: bounds.height },
-            15,
+            35,
             10,
         );
 
@@ -25,6 +31,17 @@ export class NavigationGraph {
             xr: bounds.width,
             yb: bounds.height,
         });
+
+        this.applyElevation();
+    }
+
+    applyElevation() {
+        this.diagram.cells.forEach(
+            (c) =>
+                ((c.site as WorldSite).attributes = {
+                    elevation: Math.random(),
+                }),
+        );
     }
 
     get cells() {

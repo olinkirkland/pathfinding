@@ -1,6 +1,6 @@
 import './styles.css';
 
-import { Application, Container, Graphics } from 'pixi.js';
+import { Application, Assets, Container, Graphics, Sprite } from 'pixi.js';
 import { colorBetweenColors } from './color-util';
 import { angleBetween, comparePoints, type Point } from './math-util';
 import { NavigationGraph, type WorldSite } from './navigation-graph';
@@ -15,6 +15,17 @@ const navigationGraph = new NavigationGraph({
     await app.init({ backgroundAlpha: 0, resizeTo: window });
     document.body.appendChild(app.canvas);
 
+    // Draw the image
+    const texture = await Assets.load('image.png');
+    const mapImage = Sprite.from(texture);
+    mapImage.anchor.set(0);
+
+    mapImage.x = 0;
+    mapImage.y = 0;
+    mapImage.width = app.screen.width;
+    mapImage.height = app.screen.height;
+
+    app.stage.addChild(mapImage);
     // Render the map
     const container = new Container();
     navigationGraph.cells.forEach((cell) => {
@@ -26,16 +37,6 @@ const navigationGraph = new NavigationGraph({
         })
             .circle(site.x, site.y, 3)
             .fill();
-
-        // halfedges.forEach((h) => {
-        //     g.setStrokeStyle({
-        //         width: 1,
-        //         color: 0x000000,
-        //     })
-        //         .moveTo(h.edge.va.x, h.edge.va.y)
-        //         .lineTo(h.edge.vb.x, h.edge.vb.y)
-        //         .stroke();
-        // });
 
         const { halfedges } = cell;
         const cellPoints: Point[] = [];
@@ -60,11 +61,8 @@ const navigationGraph = new NavigationGraph({
             width: 2,
             color: 0x000000,
         }).setFillStyle({
-            color: colorBetweenColors(
-                0xff0000,
-                0x00ffff,
-                site.attributes?.elevation,
-            ),
+            color: getElevationColor(site.attributes?.elevation || 0).color,
+            alpha: getElevationColor(site.attributes?.elevation || 0).opacity,
         });
 
         g.moveTo(cellPoints[0].x, cellPoints[0].y);
@@ -81,3 +79,14 @@ const navigationGraph = new NavigationGraph({
 
     app.stage.addChild(container);
 })();
+
+function getElevationColor(elevation: number): {
+    color: number;
+    opacity: number;
+} {
+    if (elevation < 0.1) return { color: 0x000000, opacity: 0 };
+    return {
+        color: colorBetweenColors(0x00ffff, 0xff0000, elevation),
+        opacity: 1,
+    };
+}

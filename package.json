@@ -1,21 +1,22 @@
 {
-  "name": "pixi-test",
-  "private": true,
-  "version": "0.0.0",
-  "type": "module",
-  "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build",
-    "preview": "vite preview"
-  },
-  "devDependencies": {
-    "prettier": "^3.7.4",
-    "typescript": "~5.9.3",
-    "vite": "^7.2.4"
-  },
-  "dependencies": {
-    "pixi.js": "^8.15.0",
-    "random": "^5.4.1",
-    "voronoijs": "^1.0.0"
-  }
+    "name": "pixi-test",
+    "private": true,
+    "version": "0.0.0",
+    "type": "module",
+    "scripts": {
+        "dev": "vite",
+        "build": "tsc && vite build",
+        "preview": "vite preview"
+    },
+    "devDependencies": {
+        "prettier": "^3.7.4",
+        "typescript": "~5.9.3",
+        "vite": "^7.2.4"
+    },
+    "dependencies": {
+        "pixi.js": "^8.15.0",
+        "random": "^5.4.1",
+        "sharp": "^0.34.5",
+        "voronoijs": "^1.0.0"
+    }
 }

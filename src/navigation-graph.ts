@@ -1,4 +1,5 @@
 import { Diagram, Site, Voronoi } from 'voronoijs';
+import { getPixelFromImage, RGBToShade } from './image-util';
 import { distance, type Point } from './math-util';
 
 export type WorldSite = Site & {
@@ -11,13 +12,14 @@ export type WorldSite = Site & {
 export class NavigationGraph {
     private sites: WorldSite[];
     private diagram: Diagram;
+    private bounds: { width: number; height: number };
 
     constructor(bounds: { width: number; height: number }) {
+        this.bounds = bounds;
         const voronoi = new Voronoi();
-
         const points: Point[] = samplePoints(
             { width: bounds.width, height: bounds.height },
-            35,
+            20,
             10,
         );
 
@@ -36,10 +38,17 @@ export class NavigationGraph {
     }
 
     applyElevation() {
+        // Get the image
+
         this.diagram.cells.forEach(
-            (c) =>
+            async (c) =>
                 ((c.site as WorldSite).attributes = {
-                    elevation: Math.random(),
+                    elevation: RGBToShade(
+                        await getPixelFromImage('elevation.jpg', {
+                            x: c.site.x / this.bounds.width,
+                            y: c.site.y / this.bounds.height,
+                        }),
+                    ),
                 }),
         );
     }

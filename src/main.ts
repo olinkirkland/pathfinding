@@ -5,12 +5,12 @@ import { colorBetweenColors } from './color-util';
 import { angleBetween, comparePoints, type Point } from './math-util';
 import { NavigationGraph, type WorldSite } from './navigation-graph';
 
-const navigationGraph = new NavigationGraph({
-    width: window.innerWidth,
-    height: window.innerHeight,
-});
-
 (async () => {
+    const navigationGraph = new NavigationGraph({
+        width: 800,
+        height: 800,
+    });
+
     const app = new Application();
     await app.init({ backgroundAlpha: 0, resizeTo: window });
     document.body.appendChild(app.canvas);
@@ -25,18 +25,12 @@ const navigationGraph = new NavigationGraph({
     mapImage.width = app.screen.width;
     mapImage.height = app.screen.height;
 
-    app.stage.addChild(mapImage);
+    // app.stage.addChild(mapImage);
+
     // Render the map
     const container = new Container();
     navigationGraph.cells.forEach((cell) => {
         const site = cell.site as WorldSite;
-        const g = new Graphics();
-        g.setFillStyle({
-            color: 0xff0000,
-            alpha: site.attributes?.elevation,
-        })
-            .circle(site.x, site.y, 3)
-            .fill();
 
         const { halfedges } = cell;
         const cellPoints: Point[] = [];
@@ -57,8 +51,9 @@ const navigationGraph = new NavigationGraph({
             return p1AngleToSite > p2AngleToSite ? 1 : -1;
         });
 
+        const g = new Graphics();
         g.setStrokeStyle({
-            width: 2,
+            width: 1,
             color: 0x000000,
         }).setFillStyle({
             color: getElevationColor(site.attributes?.elevation || 0).color,

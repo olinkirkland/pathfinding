@@ -44,7 +44,7 @@ export async function getPixelFromImage(path: string, p: Point) {
 
     // Check if the calculated index is within the bounds of the array
     if (index < 0 || index + 3 >= pixelDataArray.length) {
-        throw new Error('Point is outside image boundaries');
+        // throw new Error('Point is outside image boundaries');    
     }
 
     // Extract RGBA values from the Uint8ClampedArray

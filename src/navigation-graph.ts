@@ -1,3 +1,4 @@
+import random from 'random';
 import { Diagram, Site, Voronoi } from 'voronoijs';
 import { getPixelFromImage, RGBToShade } from './image-util';
 import { distance, type Point } from './math-util';
@@ -19,7 +20,7 @@ export class NavigationGraph {
         const voronoi = new Voronoi();
         const points: Point[] = samplePoints(
             { width: bounds.width, height: bounds.height },
-            20,
+            15,
             10,
         );
 
@@ -37,20 +38,44 @@ export class NavigationGraph {
         this.applyElevation();
     }
 
-    applyElevation() {
-        // Get the image
-
-        this.diagram.cells.forEach(
-            async (c) =>
-                ((c.site as WorldSite).attributes = {
-                    elevation: RGBToShade(
-                        await getPixelFromImage('elevation.jpg', {
-                            x: c.site.x / this.bounds.width,
-                            y: c.site.y / this.bounds.height,
+    async applyElevation() {
+        const localStorageElevationJSON = localStorage.getItem('map.elevation');
+        if (localStorageElevationJSON) {
+            try {
+                const localStorageElevation = JSON.parse(
+                    localStorageElevationJSON,
+                );
+                this.diagram.cells.forEach(
+                    (c) =>
+                        ((c.site as WorldSite).attributes = {
+                            elevation: localStorageElevation[c.site.id],
                         }),
-                    ),
-                }),
-        );
+                );
+            } catch (error) {
+                localStorage.removeItem('map.elevation');
+                this.applyElevation();
+            }
+        } else {
+            const elevationToStore: any = {};
+            const tasks = this.diagram.cells.map(async (c) => {
+                const elevation = RGBToShade(
+                    await getPixelFromImage('elevation.jpg', {
+                        x: c.site.x / this.bounds.width,
+                        y: c.site.y / this.bounds.height,
+                    }),
+                );
+                (c.site as WorldSite).attributes = { elevation };
+                elevationToStore[c.site.id] = elevation;
+            });
+
+            await Promise.all(tasks); // Waits for all cells to be processed
+
+            // Store in localStorage
+            localStorage.setItem(
+                'map.elevation',
+                JSON.stringify(elevationToStore),
+            );
+        }
     }
 
     get cells() {
@@ -63,9 +88,11 @@ export function samplePoints(
     bounds: { width: number; height: number },
     size: number,
     tries: number,
+    seed: string = 'random',
 ): Point[] {
     const { width, height } = bounds;
     const points: Point[] = [];
+    const rng = random.clone(seed);
 
     const firstPoint: Point = {
         x: width / 2,
@@ -79,9 +106,9 @@ export function samplePoints(
 
         // Sample points around this point
         for (let i = 0; i < tries; i++) {
-            const degrees = Math.random() * 360;
+            const degrees = rng.int(0, 360);
             const radians = degrees * (Math.PI / 180);
-            const radius = size + Math.random() * (size * 2);
+            const radius = rng.int(size, size * 2);
             const offsetX = radius * Math.cos(radians);
             const offsetY = radius * Math.sin(radians);
             const q = {

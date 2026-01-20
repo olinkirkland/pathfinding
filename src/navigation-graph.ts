@@ -38,6 +38,14 @@ export class NavigationGraph {
         this.applyElevation();
     }
 
+    getSiteByPoint(p: Point): WorldSite {
+        const sitesByClosest = [...this.sites].sort((a, b) => {
+            return distance(p, a) - distance(p, b);
+        });
+        const closestSite = sitesByClosest[0];
+        return closestSite;
+    }
+
     async applyElevation() {
         const localStorageElevationJSON = localStorage.getItem('map.elevation');
         if (localStorageElevationJSON) {

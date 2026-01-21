@@ -1,19 +1,29 @@
 import random from 'random';
-import { Diagram, Site, Voronoi } from 'voronoijs';
+import { Cell, Diagram, Site, Voronoi } from 'voronoijs';
 import { getPixelFromImage, RGBToShade } from './image-util';
 import { distance, type Point } from './math-util';
 
-export type WorldSite = Site & {
-    attributes?: {
+export type WorldCell = Cell & {
+    index: number;
+    neighbors: WorldCell[];
+    attributes: {
         elevation: number;
+    };
+
+    // Utility
+    utility: {
+        used?: boolean;
+        cost?: number;
+        from?: WorldCell;
     };
 };
 
 // Poisson Disk Sampling
 export class NavigationGraph {
-    private sites: WorldSite[];
+    private sites: Site[];
     private diagram: Diagram;
     private bounds: { width: number; height: number };
+    cells: WorldCell[];
 
     constructor(bounds: { width: number; height: number }) {
         this.bounds = bounds;
@@ -35,15 +45,31 @@ export class NavigationGraph {
             yb: bounds.height,
         });
 
+        this.cells = this.diagram.cells.map((c) => {
+            const w = c as WorldCell;
+            w.index = w.site.id;
+            w.attributes = { elevation: 0 };
+            return w;
+        });
+
+        this.cells.forEach((c) => {
+            const w = c as WorldCell;
+            w.neighbors = c
+                .getNeighborIds()
+                .map((id) => this.cells[id] as WorldCell);
+        });
+
+        this.resetCellsUtility();
+
         this.applyElevation();
     }
 
-    getSiteByPoint(p: Point): WorldSite {
-        const sitesByClosest = [...this.sites].sort((a, b) => {
-            return distance(p, a) - distance(p, b);
+    getWorldCellByPoint(p: Point): WorldCell {
+        const cellsByClosest = [...this.cells].sort((a, b) => {
+            return distance(p, a.site) - distance(p, b.site);
         });
-        const closestSite = sitesByClosest[0];
-        return closestSite;
+        const closestCell = cellsByClosest[0];
+        return closestCell;
     }
 
     async applyElevation() {
@@ -53,11 +79,10 @@ export class NavigationGraph {
                 const localStorageElevation = JSON.parse(
                     localStorageElevationJSON,
                 );
-                this.diagram.cells.forEach(
+                this.cells.forEach(
                     (c) =>
-                        ((c.site as WorldSite).attributes = {
-                            elevation: localStorageElevation[c.site.id],
-                        }),
+                        (c.attributes.elevation =
+                            localStorageElevation[c.index]),
                 );
             } catch (error) {
                 localStorage.removeItem('map.elevation');
@@ -65,15 +90,15 @@ export class NavigationGraph {
             }
         } else {
             const elevationToStore: any = {};
-            const tasks = this.diagram.cells.map(async (c) => {
+            const tasks = this.cells.map(async (c) => {
                 const elevation = RGBToShade(
                     await getPixelFromImage('elevation.jpg', {
                         x: c.site.x / this.bounds.width,
                         y: c.site.y / this.bounds.height,
                     }),
                 );
-                (c.site as WorldSite).attributes = { elevation };
-                elevationToStore[c.site.id] = elevation;
+                c.attributes = { elevation };
+                elevationToStore[c.index] = elevation;
             });
 
             await Promise.all(tasks); // Waits for all cells to be processed
@@ -86,8 +111,45 @@ export class NavigationGraph {
         }
     }
 
-    get cells() {
-        return this.diagram.cells;
+    // Calculate the cheapest cost of getting to each tile
+    calculateCellCosts(startCell: WorldCell, calculateCost: Function) {
+        this.resetCellsUtility();
+
+        let costSoFar = 0;
+        const queue = [startCell];
+        while (queue.length > 0) {
+            const currentCell: WorldCell = queue.shift() as WorldCell;
+
+            for (const neighborCell of currentCell.neighbors) {
+                const neighborCost = calculateCost(currentCell, neighborCell);
+                const potentialSumCost = costSoFar + neighborCost;
+                if (
+                    neighborCell.utility.cost === undefined ||
+                    potentialSumCost < neighborCell.utility.cost
+                ) {
+                    neighborCell.utility.cost = potentialSumCost;
+                    neighborCell.utility.from = currentCell;
+                    queue.push(neighborCell);
+                }
+            }
+        }
+    }
+
+    calculatePath(startCell: WorldCell, endCell: WorldCell): WorldCell[] {
+        // Start at the endCell and go backwards until you reach the startCell
+        const path: WorldCell[] = [];
+        let currentCell = endCell;
+        while (currentCell !== startCell) {
+            path.push(currentCell);
+            if (!currentCell.utility.from) break;
+            currentCell = currentCell.utility.from;
+        }
+
+        return path.reverse();
+    }
+
+    resetCellsUtility() {
+        this.cells.forEach((c) => (c.utility = {}));
     }
 }
 

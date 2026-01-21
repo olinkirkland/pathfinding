@@ -162,11 +162,14 @@ function drawFlow() {
 }
 
 function drawPath() {
+    const g = pathGraphics;
+    g.clear();
+
+    if (!start || !end) return;
     let pathCells: WorldCell[] = [];
-    // pathCells = navigationGraph.calculatePath(start, end);
+    pathCells = navigationGraph.calculatePath(start, end);
     // Draw the path in the path container
     if (pathCells.length > 0) {
-        const g = pathGraphics;
         g.setStrokeStyle({
             width: 3,
             color: 0x000000,

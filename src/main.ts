@@ -168,18 +168,36 @@ function drawPath() {
     if (!start || !end) return;
     let pathCells: WorldCell[] = [];
     pathCells = navigationGraph.calculatePath(start, end);
+    const points = pathCells.map((c) => {
+        return { x: c.site.x, y: c.site.y };
+    });
+
     // Draw the path in the path container
-    if (pathCells.length > 0) {
-        g.setStrokeStyle({
-            width: 3,
-            color: 0x000000,
-        });
-        pathCells.forEach((c, index) => {
-            if (index === 0) g.moveTo(c.site.x, c.site.y);
-            else g.lineTo(c.site.x, c.site.y);
-        });
-        g.stroke();
+    if (!points.length) return;
+    g.setStrokeStyle({
+        width: 3,
+        color: 0x000000,
+    });
+
+    if (points.length < 3) return;
+
+    g.moveTo(points[0].x, points[0].y);
+
+    for (var i = 1; i < points.length - 2; i++) {
+        var xc = (points[i].x + points[i + 1].x) / 2;
+        var yc = (points[i].y + points[i + 1].y) / 2;
+        g.quadraticCurveTo(points[i].x, points[i].y, xc, yc);
     }
+
+    g.quadraticCurveTo(
+        points[i].x,
+        points[i].y,
+        points[i + 1].x,
+        points[i + 1].y,
+    );
+    g.stroke();
+
+    g.stroke();
 }
 
 function getElevationColor(elevation: number): {

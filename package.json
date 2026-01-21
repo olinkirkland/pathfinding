@@ -14,6 +14,7 @@
         "vite": "^7.2.4"
     },
     "dependencies": {
+        "gsap": "^3.14.2",
         "pixi.js": "^8.15.0",
         "random": "^5.4.1",
         "sharp": "^0.34.5",

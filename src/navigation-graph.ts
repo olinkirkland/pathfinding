@@ -60,7 +60,6 @@ export class NavigationGraph {
         });
 
         this.resetCellsUtility();
-
         this.applyElevation();
     }
 
@@ -115,14 +114,19 @@ export class NavigationGraph {
     calculateCellCosts(startCell: WorldCell, calculateCost: Function) {
         this.resetCellsUtility();
 
-        let costSoFar = 0;
+        startCell.utility.cost = 0;
         const queue = [startCell];
+
         while (queue.length > 0) {
             const currentCell: WorldCell = queue.shift() as WorldCell;
 
             for (const neighborCell of currentCell.neighbors) {
-                const neighborCost = calculateCost(currentCell, neighborCell);
-                const potentialSumCost = costSoFar + neighborCost;
+                const costToReachNeighbor = calculateCost(
+                    currentCell,
+                    neighborCell,
+                );
+                const potentialSumCost =
+                    currentCell.utility.cost + costToReachNeighbor;
                 if (
                     neighborCell.utility.cost === undefined ||
                     potentialSumCost < neighborCell.utility.cost

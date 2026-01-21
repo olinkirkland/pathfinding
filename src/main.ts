@@ -195,7 +195,6 @@ function drawPath() {
         points[i + 1].x,
         points[i + 1].y,
     );
-    g.stroke();
 
     g.stroke();
 }
